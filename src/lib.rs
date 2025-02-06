@@ -32,12 +32,14 @@ use hpke_rs_crypto::{
 use prelude::kdf::{labeled_expand, labeled_extract};
 #[cfg(feature = "serialization")]
 pub(crate) use serde::{Deserialize, Serialize};
+use x_wing::ENCAP_RANDOMNESS_SIZE;
 use zeroize::Zeroize;
 
 mod dh_kem;
 pub(crate) mod kdf;
 mod kem;
 pub mod prelude;
+mod xwing_kem;
 
 mod util;
 
@@ -406,7 +408,16 @@ impl<Crypto: HpkeCrypto> Hpke<Crypto> {
         psk_id: Option<&[u8]>,
         sk_s: Option<&HpkePrivateKey>,
     ) -> Result<(EncapsulatedSecret, Context<Crypto>), HpkeError> {
-        let randomness = self.random(self.kem_id.private_key_len())?;
+        let randomness_len = match self.kem_id {
+            KemAlgorithm::DhKemP256
+            | KemAlgorithm::DhKemP384
+            | KemAlgorithm::DhKemP521
+            | KemAlgorithm::DhKemK256
+            | KemAlgorithm::DhKem25519
+            | KemAlgorithm::DhKem448 => self.kem_id.private_key_len(),
+            KemAlgorithm::XwingMlKem768P256 => ENCAP_RANDOMNESS_SIZE,
+        };
+        let randomness = self.random(randomness_len)?;
         let (zz, enc) = match self.mode {
             Mode::Base | Mode::Psk => {
                 kem::encaps::<Crypto>(self.kem_id, pk_r.value.as_slice(), &randomness)?
@@ -998,6 +1009,12 @@ impl From<hpke_rs_crypto::error::Error> for HpkeError {
             }
             hpke_rs_crypto::error::Error::InsufficientRandomness => {
                 HpkeError::InsufficientRandomness
+            }
+            hpke_rs_crypto::error::Error::NoAuth => {
+                HpkeError::CryptoError("KEM algorithm does not support authentication.".to_string())
+            }
+            hpke_rs_crypto::error::Error::DecapFailed => {
+                HpkeError::CryptoError("KEM decapsulation failed.".to_string())
             }
         }
     }

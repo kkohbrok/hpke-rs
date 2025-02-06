@@ -29,6 +29,9 @@ pub enum KemAlgorithm {
 
     /// DH KEM on x448
     DhKem448 = 0x0021,
+
+    /// XWing with ML-KEM768 and P256
+    XwingMlKem768P256 = 0x647b,
 }
 
 impl core::fmt::Display for KemAlgorithm {
@@ -47,6 +50,7 @@ impl core::convert::TryFrom<u16> for KemAlgorithm {
             0x0016 => Ok(KemAlgorithm::DhKemK256),
             0x0020 => Ok(KemAlgorithm::DhKem25519),
             0x0021 => Ok(KemAlgorithm::DhKem448),
+            0x0022 => Ok(KemAlgorithm::XwingMlKem768P256),
             _ => Err(Self::Error::UnknownKemAlgorithm),
         }
     }
@@ -62,6 +66,7 @@ impl KemAlgorithm {
             KemAlgorithm::DhKemK256 => 32,
             KemAlgorithm::DhKem25519 => 32,
             KemAlgorithm::DhKem448 => 56,
+            KemAlgorithm::XwingMlKem768P256 => 32,
         }
     }
 
@@ -74,6 +79,7 @@ impl KemAlgorithm {
             KemAlgorithm::DhKemK256 => 32,
             KemAlgorithm::DhKem25519 => 32,
             KemAlgorithm::DhKem448 => 64,
+            KemAlgorithm::XwingMlKem768P256 => 32,
         }
     }
 }
@@ -204,6 +210,7 @@ impl From<KemAlgorithm> for KdfAlgorithm {
             KemAlgorithm::DhKemK256 => KdfAlgorithm::HkdfSha256,
             KemAlgorithm::DhKem25519 => KdfAlgorithm::HkdfSha256,
             KemAlgorithm::DhKem448 => KdfAlgorithm::HkdfSha512,
+            KemAlgorithm::XwingMlKem768P256 => KdfAlgorithm::HkdfSha256,
         }
     }
 }

@@ -4,6 +4,7 @@ use hpke_rs_crypto::{error::Error, types::KemAlgorithm, HpkeCrypto};
 
 use crate::dh_kem;
 use crate::util;
+use crate::xwing_kem;
 
 pub(crate) type PrivateKey = Vec<u8>;
 pub(crate) type PublicKey = Vec<u8>;
@@ -27,6 +28,7 @@ pub(crate) fn encaps<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKem448 => {
             dh_kem::encaps::<Crypto>(alg, pk_r, &ciphersuite(alg), randomness)
         }
+        KemAlgorithm::XwingMlKem768P256 => xwing_kem::encaps(pk_r, randomness),
     }
 }
 
@@ -42,6 +44,7 @@ pub(crate) fn decaps<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKemP521
         | KemAlgorithm::DhKem25519
         | KemAlgorithm::DhKem448 => dh_kem::decaps::<Crypto>(alg, enc, sk_r, &ciphersuite(alg)),
+        KemAlgorithm::XwingMlKem768P256 => xwing_kem::decaps(enc, sk_r),
     }
 }
 
@@ -60,6 +63,7 @@ pub(crate) fn auth_encaps<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKem448 => {
             dh_kem::auth_encaps::<Crypto>(alg, pk_r, sk_s, &ciphersuite(alg), randomness)
         }
+        KemAlgorithm::XwingMlKem768P256 => Err(Error::NoAuth),
     }
 }
 
@@ -78,6 +82,7 @@ pub(crate) fn auth_decaps<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKem448 => {
             dh_kem::auth_decaps::<Crypto>(alg, enc, sk_r, pk_s, &ciphersuite(alg))
         }
+        KemAlgorithm::XwingMlKem768P256 => Err(Error::NoAuth),
     }
 }
 
@@ -92,6 +97,7 @@ pub(crate) fn key_gen<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKemP521
         | KemAlgorithm::DhKem25519
         | KemAlgorithm::DhKem448 => dh_kem::key_gen::<Crypto>(alg, prng),
+        KemAlgorithm::XwingMlKem768P256 => xwing_kem::key_gen::<Crypto>(prng),
     }
 }
 
@@ -102,5 +108,13 @@ pub(crate) fn derive_key_pair<Crypto: HpkeCrypto>(
     alg: KemAlgorithm,
     ikm: &[u8],
 ) -> Result<(PublicKey, PrivateKey), Error> {
-    dh_kem::derive_key_pair::<Crypto>(alg, &ciphersuite(alg), ikm)
+    match alg {
+        KemAlgorithm::DhKemP256
+        | KemAlgorithm::DhKemK256
+        | KemAlgorithm::DhKemP384
+        | KemAlgorithm::DhKemP521
+        | KemAlgorithm::DhKem25519
+        | KemAlgorithm::DhKem448 => dh_kem::derive_key_pair::<Crypto>(alg, &ciphersuite(alg), ikm),
+        KemAlgorithm::XwingMlKem768P256 => xwing_kem::derive_key_pair(ikm),
+    }
 }

@@ -20,7 +20,7 @@ lazy_static! {
                 let aead_mode = AeadAlgorithm::try_from(aead_mode).unwrap();
                 for kdf_mode in 1u16..4 {
                     let kdf_mode = KdfAlgorithm::try_from(kdf_mode).unwrap();
-                    for &kem_mode in &[0x10u16, 0x20] {
+                    for &kem_mode in &[0x10u16, 0x20, 0x647b] {
                         let kem_mode = KemAlgorithm::try_from(kem_mode).unwrap();
                         tests.push((hpke_mode, kem_mode, kdf_mode, aead_mode));
                         println!(
@@ -991,5 +991,34 @@ generate_test_case!(
     KemAlgorithm::DhKem25519,
     KdfAlgorithm::HkdfSha512,
     AeadAlgorithm::ChaCha20Poly1305,
+    HpkeRustCrypto
+);
+
+// XWing tests
+
+generate_test_case!(
+    base_xwingmlkem768p256_hkdfsha256_aes128,
+    HpkeMode::Base,
+    KemAlgorithm::XwingMlKem768P256,
+    KdfAlgorithm::HkdfSha256,
+    AeadAlgorithm::Aes128Gcm,
+    HpkeRustCrypto
+);
+
+generate_test_case!(
+    base_xwingmlkem768p256_hkdfsha256_aes256,
+    HpkeMode::Base,
+    KemAlgorithm::XwingMlKem768P256,
+    KdfAlgorithm::HkdfSha256,
+    AeadAlgorithm::Aes256Gcm,
+    HpkeRustCrypto
+);
+
+generate_test_case!(
+    base_xwingmlkem768p256_hkdfsha512_aes256,
+    HpkeMode::Base,
+    KemAlgorithm::XwingMlKem768P256,
+    KdfAlgorithm::HkdfSha256,
+    AeadAlgorithm::Aes256Gcm,
     HpkeRustCrypto
 );

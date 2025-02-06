@@ -38,6 +38,12 @@ pub enum Error {
     /// Insufficient randomness to perform the operation.
     InsufficientRandomness,
 
+    /// The given KEM algorithm doesn't support authentication.
+    NoAuth,
+
+    /// KEM decapsulation failed.
+    DecapFailed,
+
     /// A crypto library error.
     CryptoLibraryError(String),
 }
