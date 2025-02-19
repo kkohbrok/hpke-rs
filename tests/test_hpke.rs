@@ -997,27 +997,27 @@ generate_test_case!(
 // XWing tests
 
 generate_test_case!(
-    base_xwingmlkem1024p384_hkdfsha256_aes128,
+    base_xwingmlkem768p256_hkdfsha256_aes128,
     HpkeMode::Base,
-    KemAlgorithm::XwingMlKem1024P384,
+    KemAlgorithm::XwingMlKem768P256,
     KdfAlgorithm::HkdfSha256,
     AeadAlgorithm::Aes128Gcm,
     HpkeRustCrypto
 );
 
 generate_test_case!(
-    base_xwingmlkem1024p384_hkdfsha256_aes256,
+    base_xwingmlkem768p256_hkdfsha256_aes256,
     HpkeMode::Base,
-    KemAlgorithm::XwingMlKem1024P384,
+    KemAlgorithm::XwingMlKem768P256,
     KdfAlgorithm::HkdfSha256,
     AeadAlgorithm::Aes256Gcm,
     HpkeRustCrypto
 );
 
 generate_test_case!(
-    base_xwingmlkem1024p384_hkdfsha512_aes256,
+    base_xwingmlkem768p256_hkdfsha512_aes256,
     HpkeMode::Base,
-    KemAlgorithm::XwingMlKem1024P384,
+    KemAlgorithm::XwingMlKem768P256,
     KdfAlgorithm::HkdfSha256,
     AeadAlgorithm::Aes256Gcm,
     HpkeRustCrypto
