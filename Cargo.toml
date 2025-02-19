@@ -11,7 +11,7 @@ repository = "https://github.com/franziskuskiefer/hpke-rs"
 exclude = ["/tests"]
 
 [dependencies]
-x-wing = { version = "0.0.1-pre.1", git = "https://github.com/kkohbrok/KEMs", rev = "e469b59a64e4a5f5133cd776feba04c85b52b793" }
+x-wing = { version = "0.0.1-pre.1", git = "https://github.com/kkohbrok/KEMs", rev = "7cfcff6a141c4247112716eec9cafaab369d4529" }
 kem = "0.3.0-pre.0"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"], optional = true }
