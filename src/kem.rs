@@ -28,7 +28,7 @@ pub(crate) fn encaps<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKem448 => {
             dh_kem::encaps::<Crypto>(alg, pk_r, &ciphersuite(alg), randomness)
         }
-        KemAlgorithm::XwingMlKem768P256 => xwing_kem::encaps(pk_r, randomness),
+        KemAlgorithm::XwingMlKem1024P384 => xwing_kem::encaps(pk_r, randomness),
     }
 }
 
@@ -44,7 +44,7 @@ pub(crate) fn decaps<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKemP521
         | KemAlgorithm::DhKem25519
         | KemAlgorithm::DhKem448 => dh_kem::decaps::<Crypto>(alg, enc, sk_r, &ciphersuite(alg)),
-        KemAlgorithm::XwingMlKem768P256 => xwing_kem::decaps(enc, sk_r),
+        KemAlgorithm::XwingMlKem1024P384 => xwing_kem::decaps(enc, sk_r),
     }
 }
 
@@ -63,7 +63,7 @@ pub(crate) fn auth_encaps<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKem448 => {
             dh_kem::auth_encaps::<Crypto>(alg, pk_r, sk_s, &ciphersuite(alg), randomness)
         }
-        KemAlgorithm::XwingMlKem768P256 => Err(Error::NoAuth),
+        KemAlgorithm::XwingMlKem1024P384 => Err(Error::NoAuth),
     }
 }
 
@@ -82,7 +82,7 @@ pub(crate) fn auth_decaps<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKem448 => {
             dh_kem::auth_decaps::<Crypto>(alg, enc, sk_r, pk_s, &ciphersuite(alg))
         }
-        KemAlgorithm::XwingMlKem768P256 => Err(Error::NoAuth),
+        KemAlgorithm::XwingMlKem1024P384 => Err(Error::NoAuth),
     }
 }
 
@@ -97,7 +97,7 @@ pub(crate) fn key_gen<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKemP521
         | KemAlgorithm::DhKem25519
         | KemAlgorithm::DhKem448 => dh_kem::key_gen::<Crypto>(alg, prng),
-        KemAlgorithm::XwingMlKem768P256 => xwing_kem::key_gen::<Crypto>(prng),
+        KemAlgorithm::XwingMlKem1024P384 => xwing_kem::key_gen::<Crypto>(prng),
     }
 }
 
@@ -115,6 +115,6 @@ pub(crate) fn derive_key_pair<Crypto: HpkeCrypto>(
         | KemAlgorithm::DhKemP521
         | KemAlgorithm::DhKem25519
         | KemAlgorithm::DhKem448 => dh_kem::derive_key_pair::<Crypto>(alg, &ciphersuite(alg), ikm),
-        KemAlgorithm::XwingMlKem768P256 => xwing_kem::derive_key_pair(ikm),
+        KemAlgorithm::XwingMlKem1024P384 => xwing_kem::derive_key_pair(ikm),
     }
 }

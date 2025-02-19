@@ -415,7 +415,7 @@ impl<Crypto: HpkeCrypto> Hpke<Crypto> {
             | KemAlgorithm::DhKemK256
             | KemAlgorithm::DhKem25519
             | KemAlgorithm::DhKem448 => self.kem_id.private_key_len(),
-            KemAlgorithm::XwingMlKem768P256 => ENCAP_RANDOMNESS_SIZE,
+            KemAlgorithm::XwingMlKem1024P384 => ENCAP_RANDOMNESS_SIZE,
         };
         let randomness = self.random(randomness_len)?;
         let (zz, enc) = match self.mode {
