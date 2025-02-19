@@ -11,8 +11,8 @@ repository = "https://github.com/franziskuskiefer/hpke-rs"
 exclude = ["/tests"]
 
 [dependencies]
+x-wing = { version = "0.0.1-pre.1", git = "https://github.com/kkohbrok/KEMs", rev = "e469b59a64e4a5f5133cd776feba04c85b52b793" }
 kem = "0.3.0-pre.0"
-x-wing = { version = "0.0.1-pre.1", git = "https://github.com/kkohbrok/KEMs", branch = "konrad/xwing_p256" }
 log = "0.4"
 serde = { version = "1.0", features = ["derive"], optional = true }
 tls_codec = { version = "0.4.1-pre.1", features = ["derive"], optional = true }
