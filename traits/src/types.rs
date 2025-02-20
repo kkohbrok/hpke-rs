@@ -50,7 +50,7 @@ impl core::convert::TryFrom<u16> for KemAlgorithm {
             0x0016 => Ok(KemAlgorithm::DhKemK256),
             0x0020 => Ok(KemAlgorithm::DhKem25519),
             0x0021 => Ok(KemAlgorithm::DhKem448),
-            0x0022 => Ok(KemAlgorithm::XwingMlKem1024P384),
+            0x647b => Ok(KemAlgorithm::XwingMlKem1024P384),
             _ => Err(Self::Error::UnknownKemAlgorithm),
         }
     }
