@@ -1006,10 +1006,10 @@ generate_test_case!(
 );
 
 generate_test_case!(
-    base_xwingmlkem1024p384_hkdfsha256_aes256,
+    base_xwingmlkem1024p384_hkdfsha384_aes256,
     HpkeMode::Base,
     KemAlgorithm::XwingMlKem1024P384,
-    KdfAlgorithm::HkdfSha256,
+    KdfAlgorithm::HkdfSha384,
     AeadAlgorithm::Aes256Gcm,
     HpkeRustCrypto
 );
@@ -1018,7 +1018,7 @@ generate_test_case!(
     base_xwingmlkem1024p384_hkdfsha512_aes256,
     HpkeMode::Base,
     KemAlgorithm::XwingMlKem1024P384,
-    KdfAlgorithm::HkdfSha256,
+    KdfAlgorithm::HkdfSha512,
     AeadAlgorithm::Aes256Gcm,
     HpkeRustCrypto
 );

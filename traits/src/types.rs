@@ -66,7 +66,7 @@ impl KemAlgorithm {
             KemAlgorithm::DhKemK256 => 32,
             KemAlgorithm::DhKem25519 => 32,
             KemAlgorithm::DhKem448 => 56,
-            KemAlgorithm::XwingMlKem1024P384 => 32,
+            KemAlgorithm::XwingMlKem1024P384 => 64,
         }
     }
 
@@ -79,7 +79,7 @@ impl KemAlgorithm {
             KemAlgorithm::DhKemK256 => 32,
             KemAlgorithm::DhKem25519 => 32,
             KemAlgorithm::DhKem448 => 64,
-            KemAlgorithm::XwingMlKem1024P384 => 32,
+            KemAlgorithm::XwingMlKem1024P384 => 48,
         }
     }
 }
@@ -210,7 +210,7 @@ impl From<KemAlgorithm> for KdfAlgorithm {
             KemAlgorithm::DhKemK256 => KdfAlgorithm::HkdfSha256,
             KemAlgorithm::DhKem25519 => KdfAlgorithm::HkdfSha256,
             KemAlgorithm::DhKem448 => KdfAlgorithm::HkdfSha512,
-            KemAlgorithm::XwingMlKem1024P384 => KdfAlgorithm::HkdfSha256,
+            KemAlgorithm::XwingMlKem1024P384 => KdfAlgorithm::HkdfSha384,
         }
     }
 }
