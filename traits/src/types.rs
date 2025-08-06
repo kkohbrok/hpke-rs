@@ -30,6 +30,9 @@ pub enum KemAlgorithm {
     /// DH KEM on x448
     DhKem448 = 0x0021,
 
+    /// ML-KEM1024
+    MlKem1024 = 0x0042,
+
     /// X-WING
     XWingDraft06 = 0x004D,
 }
@@ -66,6 +69,7 @@ impl KemAlgorithm {
             KemAlgorithm::DhKemK256 => 32,
             KemAlgorithm::DhKem25519 => 32,
             KemAlgorithm::DhKem448 => 56,
+            KemAlgorithm::MlKem1024 => 32,
             KemAlgorithm::XWingDraft06 => 32,
         }
     }
@@ -79,6 +83,7 @@ impl KemAlgorithm {
             KemAlgorithm::DhKemK256 => 32,
             KemAlgorithm::DhKem25519 => 32,
             KemAlgorithm::DhKem448 => 64,
+            KemAlgorithm::MlKem1024 => 32,
             KemAlgorithm::XWingDraft06 => 32,
         }
     }
@@ -211,6 +216,7 @@ impl From<KemAlgorithm> for KdfAlgorithm {
             KemAlgorithm::DhKem25519 => KdfAlgorithm::HkdfSha256,
             KemAlgorithm::DhKem448 => KdfAlgorithm::HkdfSha512,
             KemAlgorithm::XWingDraft06 => KdfAlgorithm::HkdfSha512,
+            KemAlgorithm::MlKem1024 => KdfAlgorithm::HkdfSha512,
         }
     }
 }

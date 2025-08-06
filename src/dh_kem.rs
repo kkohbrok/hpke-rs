@@ -66,7 +66,7 @@ pub(super) fn derive_key_pair<Crypto: HpkeCrypto>(
             &[],
             alg.private_key_len(),
         )?,
-        KemAlgorithm::DhKemP256 | KemAlgorithm::DhKemK256 => {
+        KemAlgorithm::DhKemP256 | KemAlgorithm::DhKemP384 | KemAlgorithm::DhKemK256 => {
             let mut ctr = 0u8;
             // Do rejection sampling trying to find a valid key.
             // It is expected that there aren't too many iteration and that

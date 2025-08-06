@@ -22,12 +22,16 @@ k256 = { version = "0.13", features = [
     "arithmetic",
     "ecdh",
 ], default-features = false }
-p384 = { version = "0.13", default-features = false }
+p384 = { version = "0.13", default-features = false, features = [
+    "arithmetic",
+    "ecdh",
+] }
 x25519-dalek = { version = "2", features = ["static_secrets"] }
 chacha20poly1305 = { version = "0.10", default-features = false, features = [
     "alloc",
 ] }
 aes-gcm = { version = "0.10", default-features = false, features = ["aes"] }
+ml-kem = { version = "0.2.1", features = ["deterministic"] }
 # Randomness
 rand_core = { version = "0.6", features = ["getrandom"] }
 rand_old = { version = "0.8", package = "rand", default-features = false }

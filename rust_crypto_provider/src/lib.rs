@@ -5,6 +5,10 @@ extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
 use core::fmt::Display;
+use ml_kem::{
+    kem::{Decapsulate, Encapsulate},
+    EncodedSizeUser, KemCore, MlKem1024Params,
+};
 
 use hpke_rs_crypto::{
     error::Error,
@@ -19,6 +23,11 @@ use p256::{
 use k256::{
     elliptic_curve::{ecdh::diffie_hellman as k256diffie_hellman, sec1::ToEncodedPoint},
     PublicKey as k256PublicKey, SecretKey as k256SecretKey,
+};
+
+use p384::{
+    elliptic_curve::ecdh::diffie_hellman as p384diffie_hellman, PublicKey as p384PublicKey,
+    SecretKey as p384SecretKey,
 };
 
 use rand_core::SeedableRng;
@@ -94,6 +103,15 @@ impl HpkeCrypto for HpkeRustCrypto {
                     .as_slice()
                     .into())
             }
+            KemAlgorithm::DhKemP384 => {
+                let sk = p384SecretKey::from_slice(sk).map_err(|_| Error::KemInvalidSecretKey)?;
+                let pk =
+                    p384PublicKey::from_sec1_bytes(pk).map_err(|_| Error::KemInvalidPublicKey)?;
+                Ok(p384diffie_hellman(sk.to_nonzero_scalar(), pk.as_affine())
+                    .raw_secret_bytes()
+                    .as_slice()
+                    .into())
+            }
             KemAlgorithm::DhKemK256 => {
                 let sk = k256SecretKey::from_slice(sk).map_err(|_| Error::KemInvalidSecretKey)?;
                 let pk =
@@ -107,23 +125,62 @@ impl HpkeCrypto for HpkeRustCrypto {
         }
     }
 
-    fn kem_key_gen_derand(_alg: KemAlgorithm, _seed: &[u8]) -> Result<(Vec<u8>, Vec<u8>), Error> {
-        // No ciphersuite uses this.
-        return Err(Error::UnsupportedKemOperation);
+    fn kem_key_gen_derand(alg: KemAlgorithm, seed: &[u8]) -> Result<(Vec<u8>, Vec<u8>), Error> {
+        match alg {
+            KemAlgorithm::MlKem1024 => {
+                let d: [u8; 32] = seed[0..32]
+                    .try_into()
+                    .map_err(|_| Error::InsufficientRandomness)?;
+                let z: [u8; 32] = seed[32..]
+                    .try_into()
+                    .map_err(|_| Error::InsufficientRandomness)?;
+
+                let (sk, pk) = ml_kem::MlKem1024::generate_deterministic((&d).into(), (&z).into());
+                Ok((pk.as_bytes().to_vec(), sk.as_bytes().to_vec()))
+            }
+            _ => {
+                return Err(Error::UnsupportedKemOperation);
+            }
+        }
     }
 
     fn kem_encaps(
-        _alg: KemAlgorithm,
-        _pk_r: &[u8],
-        _prng: &mut Self::HpkePrng,
+        alg: KemAlgorithm,
+        pk_r: &[u8],
+        prng: &mut Self::HpkePrng,
     ) -> Result<(Vec<u8>, Vec<u8>), Error> {
-        // No ciphersuite uses this.
-        return Err(Error::UnsupportedKemOperation);
+        match alg {
+            KemAlgorithm::MlKem1024 => {
+                let encaps_key = ml_kem::kem::EncapsulationKey::<MlKem1024Params>::from_bytes(
+                    pk_r.try_into().map_err(|_| Error::KemInvalidPublicKey)?,
+                );
+                encaps_key
+                    .encapsulate(prng)
+                    .map_err(|_| Error::CryptoLibraryError("KEM encapsulation failed".into()))
+                    .map(|(ct, sk)| (sk.to_vec(), ct.to_vec()))
+            }
+            _ => {
+                return Err(Error::UnsupportedKemOperation);
+            }
+        }
     }
 
-    fn kem_decaps(_alg: KemAlgorithm, _ct: &[u8], _sk_r: &[u8]) -> Result<Vec<u8>, Error> {
-        // No ciphersuite uses this.
-        return Err(Error::UnsupportedKemOperation);
+    fn kem_decaps(alg: KemAlgorithm, ct: &[u8], sk_r: &[u8]) -> Result<Vec<u8>, Error> {
+        match alg {
+            KemAlgorithm::MlKem1024 => {
+                let decaps_key = ml_kem::kem::DecapsulationKey::<MlKem1024Params>::from_bytes(
+                    sk_r.try_into().map_err(|_| Error::KemInvalidSecretKey)?,
+                );
+                let ct = ct.try_into().map_err(|_| Error::KemInvalidCiphertext)?;
+                decaps_key
+                    .decapsulate(ct)
+                    .map_err(|_| Error::CryptoLibraryError("KEM decapsulation failed".into()))
+                    .map(|k| k.to_vec())
+            }
+            _ => {
+                return Err(Error::UnsupportedKemOperation);
+            }
+        }
     }
 
     fn secret_to_public(alg: KemAlgorithm, sk: &[u8]) -> Result<Vec<u8>, Error> {
@@ -139,6 +196,10 @@ impl HpkeCrypto for HpkeRustCrypto {
             }
             KemAlgorithm::DhKemP256 => {
                 let sk = p256SecretKey::from_slice(sk).map_err(|_| Error::KemInvalidSecretKey)?;
+                Ok(sk.public_key().to_encoded_point(false).as_bytes().into())
+            }
+            KemAlgorithm::DhKemP384 => {
+                let sk = p384SecretKey::from_slice(sk).map_err(|_| Error::KemInvalidSecretKey)?;
                 Ok(sk.public_key().to_encoded_point(false).as_bytes().into())
             }
             KemAlgorithm::DhKemK256 => {
@@ -167,11 +228,21 @@ impl HpkeCrypto for HpkeRustCrypto {
                 let sk = sk.to_bytes().as_slice().into();
                 Ok((pk, sk))
             }
+            KemAlgorithm::DhKemP384 => {
+                let sk = p384SecretKey::random(&mut *rng);
+                let pk = sk.public_key().to_encoded_point(false).as_bytes().into();
+                let sk = sk.to_bytes().as_slice().into();
+                Ok((pk, sk))
+            }
             KemAlgorithm::DhKemK256 => {
                 let sk = k256SecretKey::random(&mut *rng);
                 let pk = sk.public_key().to_encoded_point(false).as_bytes().into();
                 let sk = sk.to_bytes().as_slice().into();
                 Ok((pk, sk))
+            }
+            KemAlgorithm::MlKem1024 => {
+                let (sk, pk) = ml_kem::MlKem1024::generate(rng);
+                Ok((pk.as_bytes().to_vec(), sk.as_bytes().to_vec()))
             }
             _ => Err(Error::UnknownKemAlgorithm),
         }
@@ -180,6 +251,9 @@ impl HpkeCrypto for HpkeRustCrypto {
     fn dh_validate_sk(alg: KemAlgorithm, sk: &[u8]) -> Result<Vec<u8>, Error> {
         match alg {
             KemAlgorithm::DhKemP256 => p256SecretKey::from_slice(sk)
+                .map_err(|_| Error::KemInvalidSecretKey)
+                .map(|_| sk.into()),
+            KemAlgorithm::DhKemP384 => p384SecretKey::from_slice(sk)
                 .map_err(|_| Error::KemInvalidSecretKey)
                 .map(|_| sk.into()),
             KemAlgorithm::DhKemK256 => k256SecretKey::from_slice(sk)
@@ -245,7 +319,11 @@ impl HpkeCrypto for HpkeRustCrypto {
     /// Returns an error if the KEM algorithm is not supported by this crypto provider.
     fn supports_kem(alg: KemAlgorithm) -> Result<(), Error> {
         match alg {
-            KemAlgorithm::DhKem25519 | KemAlgorithm::DhKemP256 | KemAlgorithm::DhKemK256 => Ok(()),
+            KemAlgorithm::DhKem25519
+            | KemAlgorithm::DhKemP256
+            | KemAlgorithm::DhKemK256
+            | KemAlgorithm::DhKemP384
+            | KemAlgorithm::MlKem1024 => Ok(()),
             _ => Err(Error::UnknownKemAlgorithm),
         }
     }
