@@ -12,6 +12,17 @@ use hpke_rs_crypto::{
     CryptoRng, HpkeCrypto, HpkeTestRng,
 };
 
+#[cfg(feature = "rustcrypto-p-curves")]
+use p384::{
+    elliptic_curve::{ecdh::diffie_hellman as p384diffie_hellman, sec1::ToSec1Point, Generate},
+    PublicKey as P384PublicKey, SecretKey as P384SecretKey,
+};
+#[cfg(feature = "rustcrypto-p-curves")]
+use p521::{
+    elliptic_curve::ecdh::diffie_hellman as p521diffie_hellman, PublicKey as P521PublicKey,
+    SecretKey as P521SecretKey,
+};
+
 use rand::{rngs::SysRng, Rng, SeedableRng};
 use rand_core::UnwrapErr;
 
@@ -59,24 +70,61 @@ impl HpkeCrypto for HpkeLibcrux {
     }
 
     fn dh(alg: KemAlgorithm, pk: &[u8], sk: &[u8]) -> Result<Vec<u8>, Error> {
-        let alg = kem_key_type_to_ecdh_alg(alg)?;
+        match alg {
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP384 => {
+                let sk = P384SecretKey::from_slice(sk).map_err(|_| Error::KemInvalidSecretKey)?;
+                let pk =
+                    P384PublicKey::from_sec1_bytes(pk).map_err(|_| Error::KemInvalidPublicKey)?;
+                Ok(p384diffie_hellman(sk.to_nonzero_scalar(), pk.as_affine())
+                    .raw_secret_bytes()
+                    .as_slice()
+                    .into())
+            }
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP521 => {
+                let sk = P521SecretKey::from_slice(sk).map_err(|_| Error::KemInvalidSecretKey)?;
+                let pk =
+                    P521PublicKey::from_sec1_bytes(pk).map_err(|_| Error::KemInvalidPublicKey)?;
+                Ok(p521diffie_hellman(sk.to_nonzero_scalar(), pk.as_affine())
+                    .raw_secret_bytes()
+                    .as_slice()
+                    .into())
+            }
+            other => {
+                let alg = kem_key_type_to_ecdh_alg(other)?;
 
-        libcrux_ecdh::derive(alg, pk, sk)
-            .map_err(|e| Error::CryptoLibraryError(format!("ECDH derive error: {:?}", e)))
-            .map(|mut p| {
-                if alg == libcrux_ecdh::Algorithm::P256 {
-                    p.truncate(32);
-                    p
-                } else {
-                    p
-                }
-            })
+                libcrux_ecdh::derive(alg, pk, sk)
+                    .map_err(|e| Error::CryptoLibraryError(format!("ECDH derive error: {:?}", e)))
+                    .map(|mut p| {
+                        if alg == libcrux_ecdh::Algorithm::P256 {
+                            p.truncate(32);
+                            p
+                        } else {
+                            p
+                        }
+                    })
+            }
+        }
     }
 
     fn secret_to_public(alg: KemAlgorithm, sk: &[u8]) -> Result<Vec<u8>, Error> {
-        let alg = kem_key_type_to_ecdh_alg(alg)?;
-
-        kem_ecdh_secret_to_public(alg, sk)
+        match alg {
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP384 => {
+                let sk = P384SecretKey::from_slice(sk).map_err(|_| Error::KemInvalidSecretKey)?;
+                Ok(sk.public_key().to_sec1_point(false).as_bytes().into())
+            }
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP521 => {
+                let sk = P521SecretKey::from_slice(sk).map_err(|_| Error::KemInvalidSecretKey)?;
+                Ok(sk.public_key().to_sec1_point(false).as_bytes().into())
+            }
+            other => {
+                let alg = kem_key_type_to_ecdh_alg(other)?;
+                kem_ecdh_secret_to_public(alg, sk)
+            }
+        }
     }
 
     fn kem_key_gen(
@@ -89,8 +137,22 @@ impl HpkeCrypto for HpkeLibcrux {
                     .map(|(sk, pk)| (pk.encode(), sk.encode()))
                     .map_err(|e| Error::CryptoLibraryError(format!("KEM key gen error: {:?}", e)))
             }
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP384 => {
+                let sk = P384SecretKey::generate_from_rng(&mut prng.rng);
+                let pk = sk.public_key().to_sec1_point(false).as_bytes().into();
+                let sk = sk.to_bytes().as_slice().into();
+                Ok((pk, sk))
+            }
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP521 => {
+                let sk = P521SecretKey::generate_from_rng(&mut prng.rng);
+                let pk = sk.public_key().to_sec1_point(false).as_bytes().into();
+                let sk = sk.to_bytes().as_slice().into();
+                Ok((pk, sk))
+            }
             other_alg => {
-                // ECDH only
+                // ECDH only (libcrux curves)
                 let ecdh_alg = kem_key_type_to_ecdh_alg(other_alg)?;
                 let sk = libcrux_ecdh::generate_secret(ecdh_alg, prng).map_err(|e| {
                     Error::CryptoLibraryError(format!("KEM key gen error: {:?}", e))
@@ -104,11 +166,18 @@ impl HpkeCrypto for HpkeLibcrux {
     }
 
     fn kem_key_gen_derand(alg: KemAlgorithm, seed: &[u8]) -> Result<(Vec<u8>, Vec<u8>), Error> {
-        let alg = kem_key_type_to_libcrux_alg(alg)?;
-
-        libcrux_kem::key_gen_derand(alg, seed)
-            .map_err(|e| Error::CryptoLibraryError(format!("KEM key gen error: {:?}", e)))
-            .map(|(sk, pk)| (pk.encode(), sk.encode()))
+        match alg {
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP384 | KemAlgorithm::DhKemP521 => {
+                Err(Error::UnsupportedKemOperation)
+            }
+            _ => {
+                let alg = kem_key_type_to_libcrux_alg(alg)?;
+                libcrux_kem::key_gen_derand(alg, seed)
+                    .map_err(|e| Error::CryptoLibraryError(format!("KEM key gen error: {:?}", e)))
+                    .map(|(sk, pk)| (pk.encode(), sk.encode()))
+            }
+        }
     }
 
     fn kem_encaps(
@@ -138,9 +207,17 @@ impl HpkeCrypto for HpkeLibcrux {
 
     fn dh_validate_sk(alg: KemAlgorithm, sk: &[u8]) -> Result<Vec<u8>, Error> {
         match alg {
-            KemAlgorithm::DhKemP256 => libcrux_ecdh::p256::validate_scalar_slice(&sk)
+            KemAlgorithm::DhKemP256 => libcrux_ecdh::p256::validate_scalar_slice(sk)
                 .map_err(|e| Error::CryptoLibraryError(format!("ECDH invalid sk error: {:?}", e)))
                 .map(|sk| sk.0.to_vec()),
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP384 => P384SecretKey::from_slice(sk)
+                .map_err(|_| Error::KemInvalidSecretKey)
+                .map(|_| sk.into()),
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP521 => P521SecretKey::from_slice(sk)
+                .map_err(|_| Error::KemInvalidSecretKey)
+                .map(|_| sk.into()),
             _ => Err(Error::UnknownKemAlgorithm),
         }
     }
@@ -252,6 +329,8 @@ impl HpkeCrypto for HpkeLibcrux {
             KemAlgorithm::DhKem25519 | KemAlgorithm::DhKemP256 | KemAlgorithm::XWingDraft06 => {
                 Ok(())
             }
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP384 | KemAlgorithm::DhKemP521 => Ok(()),
             _ => Err(Error::UnknownKemAlgorithm),
         }
     }

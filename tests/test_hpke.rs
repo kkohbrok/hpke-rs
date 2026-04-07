@@ -526,6 +526,108 @@ generate_test_case!(
     HpkeLibcrux
 );
 
+// P384/P521 via RustCrypto in the libcrux provider
+mod libcrux_p_curves {
+    use super::*;
+
+    generate_test_case!(
+        base_dhkemp384_hkdfsha384_Aes256Gcm_libcrux,
+        HpkeMode::Base,
+        KemAlgorithm::DhKemP384,
+        KdfAlgorithm::HkdfSha384,
+        AeadAlgorithm::Aes256Gcm,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        base_dhkemp384_hkdfsha384_Aes128Gcm_libcrux,
+        HpkeMode::Base,
+        KemAlgorithm::DhKemP384,
+        KdfAlgorithm::HkdfSha384,
+        AeadAlgorithm::Aes128Gcm,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        base_dhkemp384_hkdfsha384_chacha20poly1305_libcrux,
+        HpkeMode::Base,
+        KemAlgorithm::DhKemP384,
+        KdfAlgorithm::HkdfSha384,
+        AeadAlgorithm::ChaCha20Poly1305,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        base_dhkemp521_hkdfsha512_Aes256Gcm_libcrux,
+        HpkeMode::Base,
+        KemAlgorithm::DhKemP521,
+        KdfAlgorithm::HkdfSha512,
+        AeadAlgorithm::Aes256Gcm,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        base_dhkemp521_hkdfsha512_Aes128Gcm_libcrux,
+        HpkeMode::Base,
+        KemAlgorithm::DhKemP521,
+        KdfAlgorithm::HkdfSha512,
+        AeadAlgorithm::Aes128Gcm,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        base_dhkemp521_hkdfsha512_chacha20poly1305_libcrux,
+        HpkeMode::Base,
+        KemAlgorithm::DhKemP521,
+        KdfAlgorithm::HkdfSha512,
+        AeadAlgorithm::ChaCha20Poly1305,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        psk_dhkemp384_hkdfsha384_Aes256Gcm_libcrux,
+        HpkeMode::Psk,
+        KemAlgorithm::DhKemP384,
+        KdfAlgorithm::HkdfSha384,
+        AeadAlgorithm::Aes256Gcm,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        psk_dhkemp521_hkdfsha512_Aes256Gcm_libcrux,
+        HpkeMode::Psk,
+        KemAlgorithm::DhKemP521,
+        KdfAlgorithm::HkdfSha512,
+        AeadAlgorithm::Aes256Gcm,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        auth_dhkemp384_hkdfsha384_Aes256Gcm_libcrux,
+        HpkeMode::Auth,
+        KemAlgorithm::DhKemP384,
+        KdfAlgorithm::HkdfSha384,
+        AeadAlgorithm::Aes256Gcm,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        auth_dhkemp521_hkdfsha512_Aes256Gcm_libcrux,
+        HpkeMode::Auth,
+        KemAlgorithm::DhKemP521,
+        KdfAlgorithm::HkdfSha512,
+        AeadAlgorithm::Aes256Gcm,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        authpsk_dhkemp384_hkdfsha384_Aes256Gcm_libcrux,
+        HpkeMode::AuthPsk,
+        KemAlgorithm::DhKemP384,
+        KdfAlgorithm::HkdfSha384,
+        AeadAlgorithm::Aes256Gcm,
+        HpkeLibcrux
+    );
+    generate_test_case!(
+        authpsk_dhkemp521_hkdfsha512_Aes256Gcm_libcrux,
+        HpkeMode::AuthPsk,
+        KemAlgorithm::DhKemP521,
+        KdfAlgorithm::HkdfSha512,
+        AeadAlgorithm::Aes256Gcm,
+        HpkeLibcrux
+    );
+}
+
 // XXX: These are broken and pre-releases. Disabling them until they are stable.
 #[cfg(feature = "experimental")]
 mod pq_kems {
