@@ -169,25 +169,29 @@ impl HpkeCrypto for HpkeLibcrux {
         match alg {
             #[cfg(feature = "rustcrypto-p-curves")]
             KemAlgorithm::DhKemP384 => {
-                let chacha_seed: [u8; 32] = seed
-                    .try_into()
-                    .map_err(|_| Error::InsufficientRandomness)?;
+                let chacha_seed: [u8; 32] =
+                    seed.try_into().map_err(|_| Error::InsufficientRandomness)?;
                 let mut rng = rand_chacha::ChaCha20Rng::from_seed(chacha_seed);
                 let sk = P384SecretKey::generate_from_rng(&mut rng);
+                let sk_bytes: Vec<u8> = sk.to_bytes().as_slice().into();
+                if sk_bytes.iter().all(|&b| b == 0) {
+                    return Err(Error::KemInvalidSecretKey);
+                }
                 let pk = sk.public_key().to_sec1_point(false).as_bytes().into();
-                let sk = sk.to_bytes().as_slice().into();
-                Ok((pk, sk))
+                Ok((pk, sk_bytes))
             }
             #[cfg(feature = "rustcrypto-p-curves")]
             KemAlgorithm::DhKemP521 => {
-                let chacha_seed: [u8; 32] = seed
-                    .try_into()
-                    .map_err(|_| Error::InsufficientRandomness)?;
+                let chacha_seed: [u8; 32] =
+                    seed.try_into().map_err(|_| Error::InsufficientRandomness)?;
                 let mut rng = rand_chacha::ChaCha20Rng::from_seed(chacha_seed);
                 let sk = P521SecretKey::generate_from_rng(&mut rng);
+                let sk_bytes: Vec<u8> = sk.to_bytes().as_slice().into();
+                if sk_bytes.iter().all(|&b| b == 0) {
+                    return Err(Error::KemInvalidSecretKey);
+                }
                 let pk = sk.public_key().to_sec1_point(false).as_bytes().into();
-                let sk = sk.to_bytes().as_slice().into();
-                Ok((pk, sk))
+                Ok((pk, sk_bytes))
             }
             _ => {
                 let alg = kem_key_type_to_libcrux_alg(alg)?;
