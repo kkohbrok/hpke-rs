@@ -168,8 +168,26 @@ impl HpkeCrypto for HpkeLibcrux {
     fn kem_key_gen_derand(alg: KemAlgorithm, seed: &[u8]) -> Result<(Vec<u8>, Vec<u8>), Error> {
         match alg {
             #[cfg(feature = "rustcrypto-p-curves")]
-            KemAlgorithm::DhKemP384 | KemAlgorithm::DhKemP521 => {
-                Err(Error::UnsupportedKemOperation)
+            KemAlgorithm::DhKemP384 => {
+                let chacha_seed: [u8; 32] = seed
+                    .try_into()
+                    .map_err(|_| Error::InsufficientRandomness)?;
+                let mut rng = rand_chacha::ChaCha20Rng::from_seed(chacha_seed);
+                let sk = P384SecretKey::generate_from_rng(&mut rng);
+                let pk = sk.public_key().to_sec1_point(false).as_bytes().into();
+                let sk = sk.to_bytes().as_slice().into();
+                Ok((pk, sk))
+            }
+            #[cfg(feature = "rustcrypto-p-curves")]
+            KemAlgorithm::DhKemP521 => {
+                let chacha_seed: [u8; 32] = seed
+                    .try_into()
+                    .map_err(|_| Error::InsufficientRandomness)?;
+                let mut rng = rand_chacha::ChaCha20Rng::from_seed(chacha_seed);
+                let sk = P521SecretKey::generate_from_rng(&mut rng);
+                let pk = sk.public_key().to_sec1_point(false).as_bytes().into();
+                let sk = sk.to_bytes().as_slice().into();
+                Ok((pk, sk))
             }
             _ => {
                 let alg = kem_key_type_to_libcrux_alg(alg)?;
