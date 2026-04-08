@@ -17,6 +17,8 @@ libcrux-kem = { version = "0.0.7", default-features = false }
 libcrux-aead = { version = "0.0.7" }
 libcrux-traits = { version = "0.0.6", default-features = false }
 # RustCrypto curves not available in libcrux
+# TODO: These should be replaced with libcrux implementations as soon as they
+# are available.
 p384 = { version = "0.14.0-rc.8", features = [
     "arithmetic",
     "ecdh",
