@@ -482,7 +482,9 @@ fn p_curve_key_gen_seed(alg: KemAlgorithm, seed: &[u8]) -> Result<[u8; 32], Erro
         return Err(Error::InsufficientRandomness);
     }
 
-    <HpkeLibcrux as HpkeCrypto>::kdf_extract(KdfAlgorithm::HkdfSha256, &[], seed)?
+    let kdf_alg: KdfAlgorithm = alg.into();
+    let extracted = <HpkeLibcrux as HpkeCrypto>::kdf_extract(kdf_alg, &[], seed)?;
+    extracted[..32]
         .try_into()
         .map_err(|_| Error::InsufficientRandomness)
 }
